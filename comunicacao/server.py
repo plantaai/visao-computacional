@@ -32,13 +32,26 @@ def carregar_imagem_bytes(image_bytes: bytes):
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     return img
 
-
 def predict_imagem_sistema_de_arquivo(model, image):
-    imageArray = tf.keras.preprocessing.image.img_to_array(image)
-    imageArray = tf.expand_dims(imageArray, 0)
-    predictions = model.predict(imageArray)[0, 0]
+    # Converte para tensor float32
+    imageTensor = tf.convert_to_tensor(image, dtype=tf.float32)
+
+    # Redimensiona para 256x256
+    resize_layer = tf.keras.layers.Resizing(IMAGE_SIZE, IMAGE_SIZE)
+    imageTensor = resize_layer(imageTensor)
+
+    # Normaliza para [0,1]
+    #rescale_layer = tf.keras.layers.Rescaling(1./255)
+    #imageTensor = rescale_layer(imageTensor)
+
+    # Adiciona dimensão batch
+    imageTensor = tf.expand_dims(imageTensor, 0)
+
+    # Faz predição
+    predictions = model.predict(imageTensor)[0, 0]
     predicted_class = CLASS_NAMES[1] if predictions >= 0.5 else CLASS_NAMES[0]
     confidence = round(100 * (predictions if predictions >= 0.5 else 1 - predictions), 2)
+    
     return predicted_class, confidence
 
 
@@ -92,7 +105,8 @@ async def predict_health(file: UploadFile = File(...)):
         save_image_with_metadata(image, predicted_class, confidence)
     except Exception:
         pass
-
+    print(predicted_class)
+    print(confidence)
     return JSONResponse(content={"predicted_class": predicted_class, "confidence": confidence})
 
 if __name__ == "__main__":
