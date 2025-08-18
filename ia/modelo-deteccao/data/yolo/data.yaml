@@ -1,0 +1,4 @@
+path: C:\Users\Everaldo\Documents\PLANTAAI\visao-computacional\ia\modelo-deteccao\data\yolo
+train: images/train
+val: images/val
+names: ["muda"]
